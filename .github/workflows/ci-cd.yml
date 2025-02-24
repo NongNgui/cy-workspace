@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,6 +21,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    if: always()
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,7 +35,7 @@ jobs:
         run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Notify Discord on Success
-        if: success()
+        if: success() && needs.build.result == 'success'
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
@@ -41,13 +43,20 @@ jobs:
           description: "Deploy เสร็จเรียบร้อย"
           color: 0x2ECC71
 
+      - name: Notify Discord on Build Failure
+        if: needs.build.result == 'failure'
+        run: |
+          curl -H "Content-Type: application/json" \
+          -X POST \
+          -d '{"content": "⚠️ Build ล้มเหลว แต่กำลังพยายาม Deploy ต่อ"}' \
+          ${{ secrets.DISCORD_WEBHOOK }}
+
       - name: Rollback and Notify Discord on Failure
         if: failure()
         run: |
           echo "Rollback to previous deployment..."
           vercel rollback --token=${{ secrets.VERCEL_TOKEN }} --yes
-          
           curl -H "Content-Type: application/json" \
           -X POST \
-          -d "{\"content\": \"❌ เกิดข้อผิดพลาด! Rollback ไปเวอร์ชันก่อนหน้าเรียบร้อยแล้ว\"}" \
+          -d '{"content": "❌ เกิดข้อผิดพลาดในการ Deploy! Rollback ไปเวอร์ชันก่อนหน้าแล้ว"}' \
           ${{ secrets.DISCORD_WEBHOOK }}
