@@ -50,13 +50,17 @@ jobs:
           -X POST \
           -d '{"content": "⚠️ Build ล้มเหลว แต่กำลังพยายาม Deploy ต่อ"}' \
           ${{ secrets.DISCORD_WEBHOOK }}
-
-      - name: Rollback and Notify Discord on Failure
+          - name: Rollback on Failure
+          if: failure()
+          run: |
+            echo "Rollback to previous deployment..."
+            vercel rollback --token=${{ secrets.VERCEL_TOKEN }} --yes
+        
+      - name: Notify Discord on Failure
         if: failure()
-        run: |
-          echo "Rollback to previous deployment..."
-          vercel rollback --token=${{ secrets.VERCEL_TOKEN }} --yes
-          curl -H "Content-Type: application/json" \
-          -X POST \
-          -d '{"content": "❌ เกิดข้อผิดพลาดในการ Deploy! Rollback ไปเวอร์ชันก่อนหน้าแล้ว"}' \
-          ${{ secrets.DISCORD_WEBHOOK }}
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "❌ เกิดข้อผิดพลาดในการ Deploy!"
+          description: "Rollback ไปเวอร์ชันก่อนหน้าเรียบร้อยแล้ว"
+          color: 0xE74C3C
