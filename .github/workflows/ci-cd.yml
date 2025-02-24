@@ -1,12 +1,9 @@
-name: CI/CD with Deploy, Discord Notification & Code Rollback
+name: CI/CD with Deploy, Discord Notification & Rollback
 
 on:
   push:
     branches:
       - main
-
-permissions:
-  contents: write
 
 jobs:
   build:
@@ -17,6 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
       - run: npm install
       - run: npm run build
 
@@ -26,9 +24,6 @@ jobs:
     if: always()
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -48,19 +43,20 @@ jobs:
           description: "Deploy เสร็จเรียบร้อย"
           color: 0x2ECC71
 
-      - name: Rollback Deployment and Code on Failure
-        if: failure()
+      - name: Notify Discord on Build Failure
+        if: needs.build.result == 'failure'
         run: |
-          echo "Rollback deployment on Vercel..."
-          vercel rollback --token=${{ secrets.VERCEL_TOKEN }} --yes
-          
-          echo "Rollback Git commit..."
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git reset --hard HEAD~1
-          git push --force origin main
-          
           curl -H "Content-Type: application/json" \
           -X POST \
-          -d "{\"content\": \"❌ Rollback ทั้ง deployment และ code ไป commit ก่อนหน้าเรียบร้อยแล้ว\"}" \
+          -d '{"content": "⚠️ Build ล้มเหลว แต่กำลังพยายาม Deploy ต่อ"}' \
+          ${{ secrets.DISCORD_WEBHOOK }}
+
+      - name: Rollback and Notify Discord on Failure
+        if: failure()
+        run: |
+          echo "Rollback to previous deployment..."
+          vercel rollback --token=${{ secrets.VERCEL_TOKEN }} --yes
+          curl -H "Content-Type: application/json" \
+          -X POST \
+          -d '{"content": "❌ เกิดข้อผิดพลาดในการ Deploy! Rollback ไปเวอร์ชันก่อนหน้าแล้ว"}' \
           ${{ secrets.DISCORD_WEBHOOK }}
