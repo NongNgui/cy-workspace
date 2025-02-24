@@ -11,7 +11,7 @@ import HelloWorld from './components/HelloWorld.vue'
       <HelloWorld msg="You did it!" />
 
       <nav>
-        <RouterLink to="/">Home</RouterLink>
+        <RouterLink to="/">TEST Success</RouterLink>
         <RouterLink to="/about">About</RouterLink>
       </nav>
     </div>
@@ -22,7 +22,6 @@ import HelloWorld from './components/HelloWorld.vue'
 
 <style scoped>
 header {
-  ed
   line-height: 1.5;
   max-height: 100vh;
 }
