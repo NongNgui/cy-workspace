@@ -25,6 +25,7 @@
     "prettier": "^3.5.1",
     "vite": "^6.1.0",
     "vite-plugin-vue-devtools": "^7.7.2",
-    "vitest": "latest"
+    "vitest": "latest",
+    "vercel":"^25.1.0"
   }
 }
