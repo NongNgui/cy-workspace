@@ -46,8 +46,8 @@ jobs:
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          title: "✅ Deploy สำเร็จ!"
-          description: "เว็บไซต์อัปเดตเรียบร้อยแล้ว [${{ steps.deploy-vercel.outputs.preview-url }}]"
+          title: '✅ Deploy สำเร็จ!'
+          description: 'เว็บไซต์อัปเดตเรียบร้อยแล้ว [${{ steps.deploy-vercel.outputs.preview-url }}]'
           color: 0x2ECC71
 
       # แจ้ง Discord เมื่อ Deploy ล้มเหลว
@@ -56,8 +56,8 @@ jobs:
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          title: "❌ เกิดข้อผิดพลาดในการ Deploy!"
-          description: "กำลัง Rollback ไปยังเวอร์ชันที่เสถียรล่าสุด"
+          title: '❌ เกิดข้อผิดพลาดในการ Deploy!'
+          description: 'กำลัง Rollback ไปยังเวอร์ชันที่เสถียรล่าสุด'
           color: 0xE74C3C
 
       # ทำการ Rollback อัตโนมัติหาก Deploy ล้มเหลว
@@ -65,4 +65,4 @@ jobs:
         if: failure()
         run: |
           npm install -g vercel
-          vercel rollback --token=${{ secrets.VERCEL_TOKEN }} --yes
+          vercel rollback ${{ secrets.VERCEL_PROJECT_ID }} --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }} --yes
