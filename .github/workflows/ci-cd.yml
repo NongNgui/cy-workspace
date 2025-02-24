@@ -50,3 +50,30 @@ jobs:
 
       - name: Deploy to Vercel (Production)
         run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Notify Discord on Success
+        if: success()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "✅ Deploy สำเร็จ!"
+          description: "เว็บไซต์อัปเดตเรียบร้อยแล้ว [${{ steps.deploy-vercel.outputs.preview-url }}]"
+          color: 0x2ECC71
+
+      # แจ้ง Discord เมื่อ Deploy ล้มเหลว
+      - name: Notify Discord on Failure
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "❌ เกิดข้อผิดพลาดในการ Deploy!"
+          description: "กำลัง Rollback ไปยังเวอร์ชันที่เสถียรล่าสุด"
+          color: 0xE74C3C
+
+      # ทำการ Rollback อัตโนมัติหาก Deploy ล้มเหลว
+      - name: Auto Rollback on Failure
+        if: failure()
+        run: |
+          npm install -g vercel
+          vercel rollback ${{ secrets.VERCEL_PROJECT_ID }} --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }} --yes
+
