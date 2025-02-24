@@ -1,15 +1,16 @@
-name: CI/CD with ESLint, Vercel, Discord Notification, and Auto Rollback
+# ไฟล์: .github/workflows/ci-cd.yml
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
-      - main
+      - main  # หรือ branch ที่คุณต้องการ deploy
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -20,18 +21,20 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Run ESLint
+      - name: Run Lint
         run: npm run lint
+
+      - name: Build Project
+        run: npm run build
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build
+    needs: build  # รอ build สำเร็จก่อน
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Deploy to Vercel
-        id: deploy-vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -39,30 +42,3 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
-
-      # แจ้ง Discord เมื่อ Deploy สำเร็จ
-      - name: Notify Discord on Success
-        if: success()
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          title: '✅ Deploy สำเร็จ!'
-          description: 'เว็บไซต์อัปเดตเรียบร้อยแล้ว [${{ steps.deploy-vercel.outputs.preview-url }}]'
-          color: 0x2ECC71
-
-      # แจ้ง Discord เมื่อ Deploy ล้มเหลว
-      - name: Notify Discord on Failure
-        if: failure()
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          title: '❌ เกิดข้อผิดพลาดในการ Deploy!'
-          description: 'กำลัง Rollback ไปยังเวอร์ชันที่เสถียรล่าสุด'
-          color: 0xE74C3C
-
-      # ทำการ Rollback อัตโนมัติหาก Deploy ล้มเหลว
-      - name: Auto Rollback on Failure
-        if: failure()
-        run: |
-          npm install -g vercel
-          vercel rollback ${{ secrets.VERCEL_PROJECT_ID }} --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }} --yes
